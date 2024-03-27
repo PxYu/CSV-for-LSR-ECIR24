@@ -22,7 +22,7 @@ Under a lot of circumstances, you don't actually need the follow the whole workf
 | Type | Link | Meaning |
 | ---- | ---- | ------- |
 | Pre-trained model | [pxyu/MSMARCO-V2-BERT-MLM-CSV30k](https://huggingface.co/pxyu/MSMARCO-V2-BERT-MLM-CSV30k) | BERT (CSV, 30K MS MARCO vocabularies) that is pre-trained on MS MARCO v2 corpus for 3 epochs |
-| Pre-trained model | [pxyu/MSMARCO-V2-BERT-MLM-CSV100k](https://huggingface.co/pxyu/MSMARCO-V2-BERT-MLM-CSV30k) | BERT (CSV, 100K MS MARCO vocabularies) that is pre-trained on MS MARCO v2 corpus for 3 epochs |
+| Pre-trained model | [pxyu/MSMARCO-V2-BERT-MLM-CSV100k](https://huggingface.co/pxyu/MSMARCO-V2-BERT-MLM-CSV100k) | BERT (CSV, 100K MS MARCO vocabularies) that is pre-trained on MS MARCO v2 corpus for 3 epochs |
 | Pre-trained model | [pxyu/MSMARCO-V1-BERT-MLM-CSV300k](https://huggingface.co/pxyu/MSMARCO-V1-BERT-MLM-CSV300k) | BERT (CSV, 300K MS MARCO vocabularies) that is pre-trained on MS MARCO v1 corpus for 10 epochs |
 | Pre-trained model | [pxyu/MSMARCO-V2-BERT-MLM-CSV300k](https://huggingface.co/pxyu/MSMARCO-V2-BERT-MLM-CSV300k) | BERT (CSV, 300K MS MARCO vocabularies) that is pre-trained on MS MARCO v2 corpus for 3 epochs |
 
