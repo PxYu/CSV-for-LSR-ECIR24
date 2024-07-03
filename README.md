@@ -107,8 +107,9 @@ torch==1.13.1
 transformers==4.31.0
 ```
 
-Then train using something like:
+(Optional, you could just use a pre-trained checkpoint listed in step 6) Then train using something like:
 
+```python
 python -m torch.distributed.launch --nproc_per_node=4 examples/unicoil/train_unicoil.py \
   --output_dir trained_files/tilde-bert100k-borda10-kldiv \
   --model_name_or_path pxyu/MSMARCO-V2-BERT-MLM-CSV100k \
@@ -129,10 +130,11 @@ python -m torch.distributed.launch --nproc_per_node=4 examples/unicoil/train_uni
   --projection_out_dim 1 \
   --logging_steps 500 \
   --overwrite_output_dir
+```
 
 ### 6. Inferencing uniCOIL on the expanded corpus and creating the inverted index.
 
-If you ran the last step successfully, you should have `trained_files/tilde-bert100k-borda10-kldiv` available for inference. Alternatively, you could just download a pretrained checkpoint we shared on Huggingface Hub.
+If you ran the last step successfully, you should have `trained_files/tilde-bert100k-borda10-kldiv` available for inference. Alternatively, you could just download a pre-trained checkpoint we shared on Huggingface Hub, like:
 
 ```shell 
 git lfs install
