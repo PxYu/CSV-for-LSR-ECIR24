@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: tevatron
+Version: 0.0.1
+Summary: Tevatron: A toolkit for learning and running deep dense retrieval models.
+Home-page: https://github.com/texttron/tevatron
+Author: Luyu Gao
+Author-email: luyug@cs.cmu.edu
+License: Apache 2.0
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.7
