@@ -89,8 +89,154 @@ python expansion.py \
 Now, the expanded terms related to our new vocabularies are available at `tilde/data/collection/expanded/YOUR_TILDE_MODEL_NAME`, which is valuable for training effective uniCOIL next.
 
 ### 4. Creating expanded corpus and training data for uniCOIL.
+
+
 ### 5. Training uniCOIL based on CSV-based LM.
+
+install uniCOIL in the locally editable way: 
+
+```shell
+cd unicoil
+pip install -e .
+```
+
+Recommended environments:
+```
+pytorch-lightning==1.6.5
+torch==1.13.1
+transformers==4.31.0
+```
+
+Then train using something like:
+
+python -m torch.distributed.launch --nproc_per_node=4 examples/unicoil/train_unicoil.py \
+  --output_dir trained_files/tilde-bert100k-borda10-kldiv \
+  --model_name_or_path pxyu/MSMARCO-V2-BERT-MLM-CSV100k \
+  --save_steps 10000 \
+  --train_dir data/tilde-bert100k-borda10/training/distill-data.jsonl \
+  --training_method kl_div \
+  --dataset_name json \
+  --fp16 \
+  --dataset_proc_num 12 \
+  --per_device_train_batch_size 8 \
+  --train_n_passages 8 \
+  --learning_rate 5e-6 \
+  --q_max_len 16 \
+  --p_max_len 384 \
+  --num_train_epochs 5 \
+  --add_pooler \
+  --projection_in_dim 768 \
+  --projection_out_dim 1 \
+  --logging_steps 500 \
+  --overwrite_output_dir
+
 ### 6. Inferencing uniCOIL on the expanded corpus and creating the inverted index.
 
+If you ran the last step successfully, you should have `trained_files/tilde-bert100k-borda10-kldiv` available for inference. Alternatively, you could just download a pretrained checkpoint we shared on Huggingface Hub.
+
+```shell 
+git lfs install
+git clone https://huggingface.co/pxyu/CSV100K-TildeA-KLDiv
+```
+
+Now, we are able to run inference with the local weights:
+
+```python
+import torch
+import random
+import numpy as np
+from tqdm import tqdm
+from datasets import load_dataset
+from tevatron.arguments import DataArguments
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoConfig, AutoTokenizer
+from tevatron.data import EncodeDataset, EncodeCollator
+from tevatron.modeling import EncoderOutput, UniCoilModel
+
+# configure the model
+
+q_max_len = 16
+p_max_len = 384
+encode_is_qry = False
+text_max_length = q_max_len if encode_is_qry else p_max_len
+
+# hf_model_name = "pxyu/UniCOIL-MSMARCO-KL-Distillation-CSV100k"
+local_model_name = "trained_files/tilde-bert100k-borda10-kldiv"
+
+config = AutoConfig.from_pretrained(
+    local_model_name,
+    num_labels=1,
+)
+
+tokenizer = AutoTokenizer.from_pretrained(
+    local_model_name,
+    use_fast=True,
+)
+
+model = UniCoilModel.load(
+    model_name_or_path=local_model_name,
+    config=config,
+)
+
+# THIS IS IMPORTANT!
+disabled_token_ids = tokenizer.convert_tokens_to_ids(["[SEP]", "[CLS]", "[MASK]", "[PAD]"])
+model.disabled_token_ids = disabled_token_ids
+
+
+# sample 100 documents as examples
+
+marco_passage = load_dataset("Tevatron/msmarco-passage-corpus")['train']
+
+sampled_id2text = {}
+for x in tqdm(marco_passage):
+    docid = x['docid']
+    text = x['text']
+    sampled_id2text[docid] = text
+    if len(sampled_id2text) == 100:
+        break
+
+pairs = [{"text_id": k,  "text": tokenizer.encode(v, add_special_tokens=False)} for k, v in sampled_id2text.items()]
+encode_dataset = EncodeDataset(pairs, tokenizer, text_max_length)
+
+encode_loader = DataLoader(
+    encode_dataset,
+    batch_size=4,
+    collate_fn=EncodeCollator(
+        tokenizer,
+        max_length=text_max_length,
+        padding='max_length'
+    ),
+    shuffle=False,
+    drop_last=False,
+)
+
+encoded = []
+lookup_indices = []
+model.eval()
+device = "cpu"
+
+import numpy as np
+def process_output(example):
+    indices = example.nonzero()[0]
+    values = example[indices]
+    quantized = (np.ceil(values * 100)).astype(int)
+    result = {str(i): int(v) for i, v in zip(indices, quantized)}
+    return result
+
+for (batch_ids, batch) in tqdm(encode_loader):
+    lookup_indices.extend(batch_ids)
+    with torch.no_grad():
+        for k, v in batch.items():
+            batch[k] = v.to(device)
+        if encode_is_qry:
+            model_output: EncoderOutput = model(query=batch)
+            output = model_output.q_reps.cpu().detach().numpy()
+        else:
+            model_output: EncoderOutput = model(passage=batch)
+            output = model_output.p_reps.cpu().detach().numpy()
+
+    encoded += list(map(process_output, output))
+
+```
 
 
